@@ -10,6 +10,10 @@ const Player = struct {
     Losses: u8,
 };
 
+const Dealer = struct {
+    TotalScore: u8,
+};
+
 const Cards = enum { One, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King };
 
 pub fn main() !void {
@@ -29,6 +33,10 @@ pub fn main() !void {
         Cards.Jack,  Cards.Jack,  Cards.Jack,  Cards.Jack,
         Cards.Queen, Cards.Queen, Cards.Queen, Cards.Queen,
         Cards.King,  Cards.King,  Cards.King,  Cards.King,
+    };
+
+    var dealer = Dealer{
+        .TotalScore = 0,
     };
 
     var player1: Player = Player{
@@ -77,12 +85,12 @@ pub fn main() !void {
 
     // Deal 1 card to each player
     for (players) |player| {
-        const rand = prng.random();
-        const rand_num = std.rand.intRangeAtMost(rand, u8, 0, 51);
-        player.TotalScore += getCardScore(dealCard(&deck, rand_num));
+        player.TotalScore += getCardScore(dealCard(&deck, prng.random()));
     }
+    dealer.TotalScore += getCardScore(dealCard(&deck, prng.random()));
+    dealer.TotalScore += getCardScore(dealCard(&deck, prng.random()));
 
-    dprint("Player1:{d}\nPlayer2:{d}\nPlayer3:{d}\n", .{ player1.TotalScore, player2.TotalScore, player3.TotalScore });
+    dprint("Dealer:{d}\nPlayer1:{d}\nPlayer2:{d}\nPlayer3:{d}\n", .{ dealer.TotalScore, player1.TotalScore, player2.TotalScore, player3.TotalScore });
     // Deal 2 cards to dealer -> reveal first one dealt
     // Players choose to hit or stay
     // Keep asking until every player standsor busted
@@ -140,8 +148,9 @@ pub fn shuffle(deck: *const [52]Cards, prng: std.rand.Xoshiro256) [52]Cards {
     }
 }
 
-pub fn dealCard(deck: *const [52]Cards, idx: u8) Cards {
-    return deck[idx];
+pub fn dealCard(deck: *const [52]Cards, rand: std.Random) Cards {
+    const rand_num = std.rand.intRangeAtMost(rand, u8, 0, 51);
+    return deck[rand_num];
 }
 
 pub fn hit() bool {}
