@@ -39,6 +39,7 @@ pub fn main() !void {
         .TotalScore = 0,
     };
 
+    // Create player
     var player1: Player = Player{
         .Name = 1,
         .Money = 100,
@@ -71,8 +72,11 @@ pub fn main() !void {
         &player2,
         &player3,
     };
-    // Create player
+
     // Get bets
+    const stdout = std.io.getStdOut().writer();
+    try stdout.print("Enter your bet: ", .{});
+
     // Shuffle  deck
     var prng = std.rand.DefaultPrng.init(blk: {
         var seed: u64 = undefined;
@@ -96,6 +100,17 @@ pub fn main() !void {
     // Keep asking until every player standsor busted
     // Reveal dealer second card
     // Calculate who won, bets etc...
+}
+
+fn get_input() ![]u8 {
+    const stdin = std.io.getStdIn().reader();
+    var buf: [10]u8 = undefined;
+
+    if (try stdin.readUntilDelimiterOrEof(&buf, '\n')) |input| {
+        return input;
+    } else {
+        return error.InvalidParam;
+    }
 }
 
 pub fn getCardScore(card: Cards) u8 {
@@ -153,6 +168,12 @@ pub fn dealCard(deck: *const [52]Cards, rand: std.Random) Cards {
     return deck[rand_num];
 }
 
-pub fn hit() bool {}
+pub fn hit() bool {
+    // Get user input to hit or stand
+}
 
-pub fn calcBets() u8 {}
+pub fn calcBets() u8 {
+    // Calculate bets after done with round.
+    // If blackjack for player and beat dealer bet * 1.5
+    // If lost, lose bet
+}
