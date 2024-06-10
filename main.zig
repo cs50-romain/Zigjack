@@ -15,7 +15,7 @@ const Cards = enum { One, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, 
 pub fn main() !void {
     dprint("Game starting...\n", .{});
 
-    const deck = [_]Cards{
+    var deck = [_]Cards{
         Cards.One,   Cards.One,   Cards.One,   Cards.One,
         Cards.Two,   Cards.Two,   Cards.Two,   Cards.Two,
         Cards.Three, Cards.Three, Cards.Three, Cards.Three,
@@ -71,15 +71,17 @@ pub fn main() !void {
         try std.posix.getrandom(std.mem.asBytes(&seed));
         break :blk seed;
     });
+    //shuffle(deck, prng);
+    const random = prng.random();
+    std.rand.shuffle(random, Cards, &deck);
 
     // Deal 1 card to each player
-    //var i: u8 = deck.len - 1;
     for (players) |player| {
         const rand = prng.random();
         const rand_num = std.rand.intRangeAtMost(rand, u8, 0, 51);
         player.TotalScore += getCardScore(dealCard(&deck, rand_num));
-        //i -= 10;
     }
+
     dprint("Player1:{d}\nPlayer2:{d}\nPlayer3:{d}\n", .{ player1.TotalScore, player2.TotalScore, player3.TotalScore });
     // Deal 2 cards to dealer -> reveal first one dealt
     // Players choose to hit or stay
@@ -127,8 +129,15 @@ pub fn getBets() void {
     // Get input from users to enter their bets
 }
 
-pub fn shuffle() void {
+pub fn shuffle(deck: *const [52]Cards, prng: std.rand.Xoshiro256) [52]Cards {
     // Shuffle the main deck of cards
+    const temp = [52]Cards{};
+    for (deck) |card| {
+        const rand = prng.random();
+        const rand_num = std.rand.intRangeAtMost(rand, u8, 0, 51);
+        _ = rand_num;
+        temp[0] = card;
+    }
 }
 
 pub fn dealCard(deck: *const [52]Cards, idx: u8) Cards {
