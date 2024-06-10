@@ -12,7 +12,7 @@ const Player = struct {
 
 const Cards = enum { One, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King };
 
-pub fn main() void {
+pub fn main() !void {
     dprint("Game starting...\n", .{});
 
     const deck = [_]Cards{
@@ -66,11 +66,19 @@ pub fn main() void {
     // Create player
     // Get bets
     // Shuffle  deck
+    var prng = std.rand.DefaultPrng.init(blk: {
+        var seed: u64 = undefined;
+        try std.posix.getrandom(std.mem.asBytes(&seed));
+        break :blk seed;
+    });
+
     // Deal 1 card to each player
-    var i: u8 = deck.len - 1;
+    //var i: u8 = deck.len - 1;
     for (players) |player| {
-        player.TotalScore += getCardScore(dealCard(&deck, i));
-        i -= 10;
+        const rand = prng.random();
+        const rand_num = std.rand.intRangeAtMost(rand, u8, 0, 51);
+        player.TotalScore += getCardScore(dealCard(&deck, rand_num));
+        //i -= 10;
     }
     dprint("Player1:{d}\nPlayer2:{d}\nPlayer3:{d}\n", .{ player1.TotalScore, player2.TotalScore, player3.TotalScore });
     // Deal 2 cards to dealer -> reveal first one dealt
