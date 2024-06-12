@@ -4,7 +4,7 @@ const dprint = std.debug.print;
 const Player = struct {
     Name: u8,
     Money: u8,
-    CurrentBet: u8,
+    CurrentBet: []u8,
     TotalScore: u8,
     Wins: u8,
     Losses: u8,
@@ -74,8 +74,13 @@ pub fn main() !void {
     };
 
     // Get bets
-    const stdout = std.io.getStdOut().writer();
-    try stdout.print("Enter your bet: ", .{});
+    for (players) |player| {
+        const stdout = std.io.getStdOut().writer();
+        try stdout.print("Enter your bet: ", .{});
+        // Need better error handling
+        const bet: []u8 = try get_input();
+        player.CurrentBet = bet;
+    }
 
     // Shuffle  deck
     var prng = std.rand.DefaultPrng.init(blk: {
@@ -91,14 +96,26 @@ pub fn main() !void {
     for (players) |player| {
         player.TotalScore += getCardScore(dealCard(&deck, prng.random()));
     }
-    dealer.TotalScore += getCardScore(dealCard(&deck, prng.random()));
-    dealer.TotalScore += getCardScore(dealCard(&deck, prng.random()));
 
-    dprint("Dealer:{d}\nPlayer1:{d}\nPlayer2:{d}\nPlayer3:{d}\n", .{ dealer.TotalScore, player1.TotalScore, player2.TotalScore, player3.TotalScore });
+    dprint("Player1:{d}\nPlayer2:{d}\nPlayer3:{d}\n", .{ player1.TotalScore, player2.TotalScore, player3.TotalScore });
     // Deal 2 cards to dealer -> reveal first one dealt
+    dealer.TotalScore += getCardScore(dealCard(&deck, prng.random()));
+    dprint("Dealer Card #1: {d}\n\n", .{dealer.TotalScore});
+    dealer.TotalScore += getCardScore(dealCard(&deck, prng.random()));
     // Players choose to hit or stay
+    for (players) |player| {
+        const stdout = std.io.getStdOut().writer();
+        try stdout.print("Player{d}, Hit or stand? ", .{player.Name});
+        // Need better error handling
+        const user_choice: []u8 = try get_input();
+        if (std.mem.eql(u8, user_choice, "hit")) {
+            player.TotalScore += getCardScore(dealCard(&deck, prng.random()));
+            dprint("Player{d}'s score: {d}\n\n", .{ player.Name, player.TotalScore });
+        }
+    }
     // Keep asking until every player standsor busted
     // Reveal dealer second card
+    dprint("Dealer Card Score: {d}\n\n", .{dealer.TotalScore});
     // Calculate who won, bets etc...
 }
 
