@@ -3,9 +3,10 @@ const dprint = std.debug.print;
 
 const Player = struct {
     Name: u8,
-    Money: u8,
-    CurrentBet: []u8,
+    Money: f16,
+    CurrentBet: u8,
     TotalScore: u8,
+    Stand: bool,
     Wins: u8,
     Losses: u8,
 };
@@ -42,27 +43,30 @@ pub fn main() !void {
     // Create player
     var player1: Player = Player{
         .Name = 1,
-        .Money = 100,
+        .Money = 100.0,
         .CurrentBet = undefined,
         .TotalScore = 0,
+        .Stand = false,
         .Wins = 0,
         .Losses = 0,
     };
 
     var player2: Player = Player{
         .Name = 2,
-        .Money = 100,
+        .Money = 100.0,
         .CurrentBet = undefined,
         .TotalScore = 0,
+        .Stand = false,
         .Wins = 0,
         .Losses = 0,
     };
 
     var player3: Player = Player{
         .Name = 3,
-        .Money = 150,
+        .Money = 150.0,
         .CurrentBet = undefined,
         .TotalScore = 0,
+        .Stand = false,
         .Wins = 0,
         .Losses = 0,
     };
@@ -92,27 +96,36 @@ pub fn main() !void {
     for (players) |player| {
         player.TotalScore += getCardScore(dealCard(&deck, prng.random()));
     }
-
     dprint("Player1:{d}\nPlayer2:{d}\nPlayer3:{d}\n", .{ player1.TotalScore, player2.TotalScore, player3.TotalScore });
+
     // Deal 2 cards to dealer -> reveal first one dealt
     dealer.TotalScore += getCardScore(dealCard(&deck, prng.random()));
     dprint("Dealer Card #1: {d}\n\n", .{dealer.TotalScore});
     dealer.TotalScore += getCardScore(dealCard(&deck, prng.random()));
+
     // Players choose to hit or stay
-    for (players) |player| {
-        const stdout = std.io.getStdOut().writer();
-        try stdout.print("Player{d}, Hit or stand? ", .{player.Name});
-        // Need better error handling
-        const user_choice: []u8 = try get_input();
-        if (std.mem.eql(u8, user_choice, "hit")) {
-            player.TotalScore += getCardScore(dealCard(&deck, prng.random()));
-            dprint("Player{d}'s score: {d}\n\n", .{ player.Name, player.TotalScore });
+    while (allPlayersStand(&players) == false) {
+        for (players) |player| {
+            try hitOrStand(player, &deck, prng.random());
         }
     }
-    // Keep asking until every player stands or busted
+
     // Reveal dealer second card
     dprint("Dealer Card Score: {d}\n\n", .{dealer.TotalScore});
     // Calculate who won, bets etc...
+    for (players) |player| {
+        calcBets(player, &dealer);
+        dprint("Player{d}'s winnings: {d:.2}\n\n", .{ player.Name, player.Money });
+    }
+}
+
+fn allPlayersStand(players: *const [3]*Player) bool {
+    for (players) |player| {
+        if (player.Stand == false) {
+            return false;
+        }
+    }
+    return true;
 }
 
 fn get_input() ![]u8 {
@@ -167,7 +180,9 @@ pub fn getBets(player: *Player) !void {
     try stdout.print("Enter your bet: ", .{});
     // Need better error handling
     const bet: []u8 = try get_input();
-    player.CurrentBet = bet;
+    //player.CurrentBet = try std.fmt.parseUnsigned(u8, bet, 10);
+    player.CurrentBet = 10 * (bet[0] - '0') + (bet[1] - '0');
+    dprint("{d}\n", .{player.CurrentBet});
 }
 
 pub fn shuffle(deck: *const [52]Cards, prng: std.rand.Xoshiro256) [52]Cards {
@@ -186,12 +201,29 @@ pub fn dealCard(deck: *const [52]Cards, rand: std.Random) Cards {
     return deck[rand_num];
 }
 
-pub fn hit() bool {
+pub fn hitOrStand(player: *Player, deck: *const [52]Cards, rand: std.Random) !void {
     // Get user input to hit or stand
+    if (player.Stand == false) {
+        const stdout = std.io.getStdOut().writer();
+        try stdout.print("Player{d}, Hit or stand? ", .{player.Name});
+        // Need better error handling
+        const user_choice: []u8 = try get_input();
+        if (std.mem.eql(u8, user_choice, "hit")) {
+            player.TotalScore += getCardScore(dealCard(deck, rand));
+            dprint("Player{d}'s score: {d}\n\n", .{ player.Name, player.TotalScore });
+        } else {
+            player.Stand = true;
+        }
+    }
 }
 
-pub fn calcBets() u8 {
+pub fn calcBets(player: *Player, dealer: *Dealer) void {
     // Calculate bets after done with round.
     // If blackjack for player and beat dealer bet * 1.5
     // If lost, lose bet
+    if (player.TotalScore == 21 and player.TotalScore > dealer.TotalScore) {
+        player.Money *= 1.5;
+    } else if (player.TotalScore < dealer.TotalScore or player.TotalScore > 21) {
+        player.Money -= @floatFromInt(player.CurrentBet);
+    }
 }
