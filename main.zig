@@ -75,11 +75,7 @@ pub fn main() !void {
 
     // Get bets
     for (players) |player| {
-        const stdout = std.io.getStdOut().writer();
-        try stdout.print("Enter your bet: ", .{});
-        // Need better error handling
-        const bet: []u8 = try get_input();
-        player.CurrentBet = bet;
+        try getBets(player);
     }
 
     // Shuffle  deck
@@ -113,7 +109,7 @@ pub fn main() !void {
             dprint("Player{d}'s score: {d}\n\n", .{ player.Name, player.TotalScore });
         }
     }
-    // Keep asking until every player standsor busted
+    // Keep asking until every player stands or busted
     // Reveal dealer second card
     dprint("Dealer Card Score: {d}\n\n", .{dealer.TotalScore});
     // Calculate who won, bets etc...
@@ -165,8 +161,13 @@ pub fn getCardScore(card: Cards) u8 {
     }
 }
 
-pub fn getBets() void {
+pub fn getBets(player: *Player) !void {
     // Get input from users to enter their bets
+    const stdout = std.io.getStdOut().writer();
+    try stdout.print("Enter your bet: ", .{});
+    // Need better error handling
+    const bet: []u8 = try get_input();
+    player.CurrentBet = bet;
 }
 
 pub fn shuffle(deck: *const [52]Cards, prng: std.rand.Xoshiro256) [52]Cards {
